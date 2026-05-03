@@ -6,11 +6,24 @@ import bcrypt from "bcrypt";
 import {User} from "../user/types";
 import {ServerErrorCode, throwServerError} from '../../providers/errors';
 import mailer from "../../providers/mailer";
+import {AuthenticatedUser} from "./guard";
 
 
 const service = {
     generateAccessToken(user: User) {
         return jwt.generateToken({ id: user.id }, '1w');
+    },
+
+    async getMe({ id }: AuthenticatedUser) {
+        const user = await userService.getById(id);
+        if (!user) {
+            throwServerError({
+                code: ServerErrorCode.BAD_REQUEST,
+                message: 'user not exist'
+            });
+        }
+
+        return user;
     },
 
     async login(data: LoginScheme) {
@@ -35,22 +48,23 @@ const service = {
         const otp = otpService.generateOtp(6);
 
         const existed = (await Promise.all([
-            userService.getByTag(data.tag),
-            userService.getByEmail(data.email),
-        ]))
-            .find(user => {
-                return user !== null;
-            });
+                userService.getByTag(data.tag),
+                userService.getByEmail(data.email),
+            ]))
+                .find(user => {
+                    return user !== null;
+                });
 
 
-        if (existed?.tag === data.tag) {
-            return throwServerError({
-                code: ServerErrorCode.BAD_REQUEST,
-                message: 'user with this tag already exists',
-            })
-        }
-        if (existed?.email === data.email) {
-            return throwServerError({
+            if (existed?.tag === data.tag) {
+                return throwServerError({
+                    code: ServerErrorCode.BAD_REQUEST,
+                    message: 'user with this tag already exists',
+                })
+            }
+
+            if (existed?.email === data.email) {
+                return throwServerError({
                 code: ServerErrorCode.BAD_REQUEST,
                 message: 'user with this email already exists',
             })
@@ -64,12 +78,8 @@ const service = {
             password: hashedPassword,
             otp,
         });
-
+        await this.requestOtp(user.id);
         return service.generateAccessToken(user);
-    },
-
-    async getUserById(id: number) {
-        return userService.getById(id);
     },
 
     async requestOtp(id: number) {
@@ -83,12 +93,13 @@ const service = {
         await userService.update(user.id, {
             otp
         });
-        mailer.sendMail({
+        await mailer.sendMail({
             to: user.email,
             from: 'chat@gmail.com',
             subject: 'New Otp',
             text: `New otp: ${otp}`,
-        })
+        });
+
         return otp;
     },
 

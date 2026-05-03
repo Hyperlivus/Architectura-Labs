@@ -29,7 +29,7 @@ const dal = {
         return db.maybeOne<User>('SELECT * FROM users WHERE id = $1', [id]);
     },
     async getByEmailOrTag(value: string): Promise<User | null> {
-        return db.maybeOne<User>('SELECT * FROM users WHERE email = $1 OR tag = $1', [value]);
+        return db.maybeOne<User>('SELECT * FROM users WHERE email = $1 OR tag = $2', [value]);
     },
     async update(id: number, updated: Partial<UpdatedUser>): Promise<User> {
         const fields = Object.keys(updated) as Array<keyof UpdatedUser>;

@@ -37,8 +37,7 @@ export async function authRoutes(app: FastifyInstance) {
 
     app.get('/auth/me', async (request: FastifyRequest, reply: FastifyReply) => {
         const authUser = await authGuard(request);
-        const user = await authService.getUserById(authUser.id);
-        reply.send({ user });
+        reply.send({ user: authService.getMe(authUser) })
     });
 
     app.post('/auth/request-otp', async (request, reply) => {
