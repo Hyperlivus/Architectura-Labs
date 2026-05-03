@@ -1,61 +1,136 @@
-# Fastify + TypeScript + PostgreSQL REST API
+# Chat API (Fastify + TypeScript + PostgreSQL)
 
-## Setup
+REST API для чату з авторизацією, чатами, учасниками та повідомленнями.
 
-1. Copy `.env.example` to `.env` and update `DATABASE_URL`.
-2. Install dependencies:
+## Вимоги
+
+- Node.js 20+
+- npm 10+
+- PostgreSQL 15+ (локально або в Docker)
+
+## Швидкий старт
+
+1. Скопіюйте приклад змінних оточення:
+
+```bash
+cp .env.example .env
+```
+
+2. Встановіть залежності:
 
 ```bash
 npm install
 ```
 
-3. Run database migrations:
+3. Налаштуйте доступ до БД.
+
+Проєкт читає такі змінні:
+
+- `DB_HOST`
+- `DB_PORT`
+- `DB_USER`
+- `DB_PASSWORD`
+- `DB_NAME`
+- `PORT`
+
+> Примітка: у `.env.example` зараз наведено `DATABASE_URL`, але в коді використовується набір `DB_*`.
+
+4. Запустіть міграції:
 
 ```bash
 npm run migrate
 ```
 
-4. Start development server:
+5. Запустіть застосунок у dev-режимі:
 
 ```bash
 npm run dev
 ```
 
-5. Build for production:
+API буде доступний за адресою `http://localhost:<PORT>`.
+
+## Запуск у production
 
 ```bash
 npm run build
 npm start
 ```
 
-## Database Migrations
+## Тести
 
-Create a new migration:
+### Unit + Integration
+
+```bash
+npx jest src/tests/unit src/tests/integration --runInBand
+```
+
+### Тільки unit
+
+```bash
+npx jest src/tests/unit --runInBand
+```
+
+### Тільки integration
+
+```bash
+npx jest src/tests/integration --runInBand
+```
+
+## Міграції
+
+Створити нову міграцію:
+
 ```bash
 npm run create-migration -- <migration_name>
 ```
 
-Run pending migrations:
+Застосувати міграції:
+
 ```bash
 npm run migrate
 ```
 
-Rollback last migration:
+Відкотити останню міграцію:
+
 ```bash
 npm run migrate:rollback
 ```
 
-Rollback multiple migrations:
-```bash
-npm run migrate:rollback 3
-```
+## Основні endpoint-и
 
-Migrations are TypeScript files that export an object with `up()` and `down()` methods.
+### Авторизація
 
-## API Endpoints
+- `POST /auth/register`
+- `POST /auth/login`
+- `GET /auth/me`
+- `POST /auth/request-otp`
+- `POST /auth/verify-otp`
 
-- `GET /users` - list users
-- `GET /users/:id` - get a user by id
-- `POST /users` - create a user
-- `PUT /users/:id` - update a user
-- `DELETE /users/:id` - delete a user
+### Чати
+
+- `GET /chats`
+- `POST /chats`
+- `PATCH /chats/:chatId`
+
+### Учасники чату
+
+- `POST /chats/:chatId/members`
+- `GET /chats/:chatId/members`
+- `DELETE /chats/:chatId/members/:memberId`
+- `PATCH /chats/:chatId/members/:memberId/permissions`
+
+### Повідомлення
+
+- `POST /chats/:chatId/messages`
+- `GET /chats/:chatId/messages`
+- `PATCH /chats/:chatId/messages/:messageId`
+- `DELETE /chats/:chatId/messages/:messageId`
+
+## Архітектура
+
+У модулях реалізовано підхід CQRS:
+
+- `queries` — операції читання
+- `commands` — операції запису
+
+Це дозволяє чітко розділити бізнес-логіку, спростити тестування та подальшу еволюцію API.

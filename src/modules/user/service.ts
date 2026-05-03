@@ -1,12 +1,17 @@
-import dal from './dal';
+import { userCommands, userQueries } from './dal';
 
 const service = {
-    getById: dal.getById,
-    getByTagOrEmail: dal.getByEmailOrTag,
-    getByTag: dal.getByTag,
-    getByEmail: dal.getByEmail,
-    create: dal.create,
-    update: dal.update,
-}
+    // CQRS-style explicit separation
+    queries: userQueries,
+    commands: userCommands,
+
+    // Backward-compatible aliases
+    getById: userQueries.getById,
+    getByTagOrEmail: userQueries.getByEmailOrTag,
+    getByTag: userQueries.getByTag,
+    getByEmail: userQueries.getByEmail,
+    create: userCommands.create,
+    update: userCommands.update,
+};
 
 export default service;

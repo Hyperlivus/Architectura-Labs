@@ -1,4 +1,4 @@
-import dal from './dal';
+import { memberCommands, memberQueries } from './dal';
 import { MemberCreationAttributes } from './types';
 import { MemberPermission, MemberPermissions } from './permissions';
 import { throwServerError, ServerErrorCode } from '../../providers/errors';
@@ -13,43 +13,46 @@ export const MEMBER_PERMISSIONS: MemberPermissions = {
 };
 
 const service = {
-  getById: dal.getById,
-  getByUserAndChat: dal.getByUserAndChat,
-  getByUserId: (userId: number) => dal.getByUserId(userId),
-  getByChatId: (chatId: number) => dal.getByChatId(chatId),
+  queries: memberQueries,
+  commands: memberCommands,
+
+  getById: memberQueries.getById,
+  getByUserAndChat: memberQueries.getByUserAndChat,
+  getByUserId: (userId: number) => memberQueries.getByUserId(userId),
+  getByChatId: (chatId: number) => memberQueries.getByChatId(chatId),
 
   async ensureMember(userId: number, chatId: number, permissions: MemberPermissions) {
-    const existing = await dal.getByUserAndChat(userId, chatId);
+    const existing = await memberQueries.getByUserAndChat(userId, chatId);
     if (existing) {
-      const updatedMember = await dal.update(existing.id, { banned: false });
-      await dal.updatePermissions(existing.id, permissions);
+      const updatedMember = await memberCommands.update(existing.id, { banned: false });
+      await memberCommands.updatePermissions(existing.id, permissions);
       return updatedMember;
     }
 
-    const member = await dal.create({ userId, chatId, banned: false });
-    await dal.updatePermissions(member.id, permissions);
+    const member = await memberCommands.create({ userId, chatId, banned: false });
+    await memberCommands.updatePermissions(member.id, permissions);
     return member;
   },
 
   async removeMember(memberId: number) {
-    const existing = await dal.getById(memberId);
+    const existing = await memberQueries.getById(memberId);
     if (!existing) {
       throwServerError({ code: ServerErrorCode.NOT_FOUND, message: 'Member not found', status: 404 });
     }
-    return dal.update(memberId, { banned: true });
+    return memberCommands.update(memberId, { banned: true });
   },
 
   async updatePermissions(memberId: number, permissions: MemberPermissions) {
-    const existing = await dal.getById(memberId);
+    const existing = await memberQueries.getById(memberId);
     if (!existing) {
       throwServerError({ code: ServerErrorCode.NOT_FOUND, message: 'Member not found', status: 404 });
     }
-    await dal.updatePermissions(memberId, permissions);
-    return await dal.getById(memberId);
+    await memberCommands.updatePermissions(memberId, permissions);
+    return await memberQueries.getById(memberId);
   },
 
   async hasPermission(memberId: number, permission: MemberPermission) {
-    const permissions = await dal.getPermissions(memberId);
+    const permissions = await memberQueries.getPermissions(memberId);
     return permissions[permission] === true;
   },
 
@@ -61,7 +64,7 @@ const service = {
     allowSelf = false
   ) {
     const authUser = await authGuard(request);
-    const currentMember = await dal.getByUserAndChat(authUser.id, chatId);
+    const currentMember = await memberQueries.getByUserAndChat(authUser.id, chatId);
 
     if (!currentMember || currentMember.banned) {
       throwServerError({ code: ServerErrorCode.FORBIDDEN, message: 'Access denied', status: 403 });
@@ -72,7 +75,7 @@ const service = {
     }
 
     if (allowSelf && targetMemberId) {
-      const targetMember = await dal.getById(targetMemberId);
+      const targetMember = await memberQueries.getById(targetMemberId);
       if (targetMember?.userId === authUser.id) {
         return authUser;
       }

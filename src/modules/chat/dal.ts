@@ -1,20 +1,13 @@
 import db from '../../providers/db';
 import { Chat, ChatCreationAttributes, ChatUpdateAttributes } from './types';
 
-const dal = {
+export const chatCommands = {
   async create(data: ChatCreationAttributes): Promise<Chat> {
     return db.one<Chat>(`
       INSERT INTO chats (title, description, tag)
       VALUES ($1, $2, $3)
       RETURNING id, title, description, tag, created_at AS "createdAt", updated_at AS "updatedAt"
     `, [data.title, data.description, data.tag]);
-  },
-
-  async getById(id: number): Promise<Chat | null> {
-    return db.maybeOne<Chat>(
-      'SELECT id, title, description, tag, created_at AS "createdAt", updated_at AS "updatedAt" FROM chats WHERE id = $1',
-      [id]
-    );
   },
 
   async update(id: number, data: ChatUpdateAttributes): Promise<Chat> {
@@ -33,6 +26,15 @@ const dal = {
       [id, ...values]
     );
   },
+};
+
+export const chatQueries = {
+  async getById(id: number): Promise<Chat | null> {
+    return db.maybeOne<Chat>(
+      'SELECT id, title, description, tag, created_at AS "createdAt", updated_at AS "updatedAt" FROM chats WHERE id = $1',
+      [id]
+    );
+  },
 
   async getByIds(ids: number[], search?: string, limit = 20, offset = 0): Promise<Chat[]> {
     let query = 'SELECT id, title, description, tag, created_at AS "createdAt", updated_at AS "updatedAt" FROM chats WHERE id = ANY($1)';
@@ -48,6 +50,11 @@ const dal = {
 
     return db.many<Chat>(query, params);
   },
+};
+
+const dal = {
+  ...chatQueries,
+  ...chatCommands,
 };
 
 export default dal;

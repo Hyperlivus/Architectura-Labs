@@ -2,41 +2,13 @@ import db from '../../providers/db';
 import { Member, MemberCreationAttributes } from './types';
 import { MemberPermissions } from './permissions';
 
-const dal = {
+export const memberCommands = {
   async create(data: MemberCreationAttributes): Promise<Member> {
     return db.one<Member>(`
       INSERT INTO members (user_id, chat_id, banned)
       VALUES ($1, $2, $3)
       RETURNING id, user_id AS "userId", chat_id AS "chatId", banned, created_at AS "createdAt", updated_at AS "updatedAt"
     `, [data.userId, data.chatId, data.banned]);
-  },
-
-  async getById(id: number): Promise<Member | null> {
-    return db.maybeOne<Member>(
-      'SELECT id, user_id AS "userId", chat_id AS "chatId", banned, created_at AS "createdAt", updated_at AS "updatedAt" FROM members WHERE id = $1',
-      [id]
-    );
-  },
-
-  async getByUserAndChat(userId: number, chatId: number): Promise<Member | null> {
-    return db.maybeOne<Member>(
-      'SELECT id, user_id AS "userId", chat_id AS "chatId", banned, created_at AS "createdAt", updated_at AS "updatedAt" FROM members WHERE user_id = $1 AND chat_id = $2',
-      [userId, chatId]
-    );
-  },
-
-  async getByUserId(userId: number): Promise<Member[]> {
-    return db.many<Member>(
-      'SELECT id, user_id AS "userId", chat_id AS "chatId", banned, created_at AS "createdAt", updated_at AS "updatedAt" FROM members WHERE user_id = $1 AND banned = false',
-      [userId]
-    );
-  },
-
-  async getByChatId(chatId: number): Promise<Member[]> {
-    return db.many<Member>(
-      'SELECT id, user_id AS "userId", chat_id AS "chatId", banned, created_at AS "createdAt", updated_at AS "updatedAt" FROM members WHERE chat_id = $1 AND banned = false',
-      [chatId]
-    );
   },
 
   async update(id: number, data: Partial<Omit<Member, 'id'>>): Promise<Member> {
@@ -74,6 +46,46 @@ const dal = {
       UPDATE member_permissions SET permissions = $1 WHERE member_id = $2
     `, [JSON.stringify(permissions), memberId]);
   },
+};
+
+export const memberQueries = {
+  async getById(id: number): Promise<Member | null> {
+    return db.maybeOne<Member>(
+      'SELECT id, user_id AS "userId", chat_id AS "chatId", banned, created_at AS "createdAt", updated_at AS "updatedAt" FROM members WHERE id = $1',
+      [id]
+    );
+  },
+
+  async getByUserAndChat(userId: number, chatId: number): Promise<Member | null> {
+    return db.maybeOne<Member>(
+      'SELECT id, user_id AS "userId", chat_id AS "chatId", banned, created_at AS "createdAt", updated_at AS "updatedAt" FROM members WHERE user_id = $1 AND chat_id = $2',
+      [userId, chatId]
+    );
+  },
+
+  async getByUserId(userId: number): Promise<Member[]> {
+    return db.many<Member>(
+      'SELECT id, user_id AS "userId", chat_id AS "chatId", banned, created_at AS "createdAt", updated_at AS "updatedAt" FROM members WHERE user_id = $1 AND banned = false',
+      [userId]
+    );
+  },
+
+  async getByChatId(chatId: number): Promise<Member[]> {
+    return db.many<Member>(
+      'SELECT id, user_id AS "userId", chat_id AS "chatId", banned, created_at AS "createdAt", updated_at AS "updatedAt" FROM members WHERE chat_id = $1 AND banned = false',
+      [chatId]
+    );
+  },
+
+  async getPermissions(memberId: number): Promise<MemberPermissions> {
+    const row = await db.maybeOne<{ permissions: string }>('SELECT permissions FROM member_permissions WHERE member_id = $1', [memberId]);
+    return row ? JSON.parse(row.permissions) : { chatUpdate: false, memberAdd: false, memberRemove: false, memberPermissions: false };
+  },
+};
+
+const dal = {
+  ...memberQueries,
+  ...memberCommands,
 };
 
 export default dal;
