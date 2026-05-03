@@ -1,13 +1,12 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { authGuard } from '../modules/auth/guard';
 import chatService from '../modules/chat/service';
-import memberService, { MEMBER_PERMISSIONS } from '../modules/member/service';
+import memberService from '../modules/member/service';
 import { MemberPermissions, MemberPermission } from '../modules/member/permissions';
 import { createChatSchema, updateChatSchema } from '../modules/chat/validation';
 import { addMemberSchema, updateMemberPermissionsSchema } from '../modules/member/validation';
 import messageService from '../modules/message/service';
 import { createMessageSchema, updateMessageSchema } from '../modules/message/validation';
-import { broadcastChatMessage } from '../providers/websocket';
 
 export async function chatRoutes(app: FastifyInstance) {
   app.get('/chats', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -70,12 +69,10 @@ export async function chatRoutes(app: FastifyInstance) {
     const data = createMessageSchema.parse(request.body);
     const authUser = await authGuard(request);
     const message = await messageService.createMessage({ chatId, userId: authUser.id, content: data.content });
-    broadcastChatMessage(chatId, { event: 'message.created', data: message });
     reply.send({ message });
   });
 
   app.patch('/chats/:chatId/messages/:messageId', async (request: FastifyRequest, reply: FastifyReply) => {
-    const chatId = Number((request.params as any).chatId);
     const messageId = Number((request.params as any).messageId);
     const data = updateMessageSchema.parse(request.body);
     const authUser = await authGuard(request);

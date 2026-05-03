@@ -1,7 +1,7 @@
 import {LoginScheme, RegisterScheme} from "./validation";
 import userService from '../user/service';
-import otpService from '../../services/otp/service';
-import jwt from '../../providers/jwt';
+import otpService from '../../services/otp';
+import jwt from '../../services/jwt';
 import bcrypt from "bcrypt";
 import {User} from "../user/types";
 import {ServerErrorCode, throwServerError} from '../../providers/errors';

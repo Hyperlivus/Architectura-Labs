@@ -4,7 +4,6 @@ import db from './providers/db';
 import { authRoutes } from './routes/auth';
 import { chatRoutes } from './routes/chats';
 import { errorHandler } from './providers/errors';
-import { setupChatWebsocketRoutes } from './providers/websocket';
 
 
 export async function buildApp() {
@@ -14,7 +13,6 @@ export async function buildApp() {
 
 
   await app.register(websocket);
-  setupChatWebsocketRoutes(app);
 
   app.setErrorHandler(errorHandler);
 

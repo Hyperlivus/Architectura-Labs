@@ -1,6 +1,6 @@
 const DIGITS = Array.from({ length: 10 }, (_, index) => index.toString());
 
-const service = {
+const otp = {
   generateOtp(length: number, charset: string[] = DIGITS): string {
     let result = '';
 
@@ -14,4 +14,4 @@ const service = {
   },
 };
 
-export default service;
+export default otp;

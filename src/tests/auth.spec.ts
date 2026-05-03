@@ -7,13 +7,13 @@ let container: StartedTestContainer;
 let db: DB;
 let app: Awaited<ReturnType<typeof buildApp>>;
 let url: string;
-let otpService: typeof import('../services/otp/service').default;
+let otpService: typeof import('../services/otp').default;
 
 const APP_PORT = 5000;
 
 async function loadApp() {
     const { buildApp } = await import('../app');
-    otpService = (await import('../services/otp/service')).default;
+    otpService = (await import('../services/otp')).otp;
     return buildApp();
 }
 

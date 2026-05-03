@@ -1,7 +1,7 @@
 import { FastifyRequest } from 'fastify';
 import userService from '../user/service';
 import { throwServerError, ServerErrorCode } from '../../providers/errors';
-import jwt from '../../providers/jwt';
+import jwt from '../../services/jwt';
 
 export interface AuthenticatedUser {
     id: number;
