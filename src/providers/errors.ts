@@ -4,6 +4,7 @@ export enum ServerErrorCode {
   UNAUTHORIZED = 401,
   FORBIDDEN = 403,
   CONFLICT = 409,
+  TOO_MANY_REQUESTS = 429,
   INTERNAL_ERROR = 500,
 }
 

@@ -11,6 +11,7 @@ describe('user service CQRS surface', () => {
     expect(userService.getById).toBe(userService.queries.getById);
     expect(userService.getByTag).toBe(userService.queries.getByTag);
     expect(userService.getByEmail).toBe(userService.queries.getByEmail);
+    expect(userService.getByTags).toBe(userService.queries.getByTags);
     expect(userService.getByTagOrEmail).toBe(userService.queries.getByEmailOrTag);
     expect(userService.create).toBe(userService.commands.create);
     expect(userService.update).toBe(userService.commands.update);

@@ -1,9 +1,9 @@
 import { memberCommands, memberQueries } from './dal';
-import { MemberCreationAttributes } from './types';
 import { MemberPermission, MemberPermissions } from './permissions';
 import { throwServerError, ServerErrorCode } from '../../providers/errors';
 import { authGuard } from '../auth/guard';
 import { FastifyRequest } from 'fastify';
+import db from '../../providers/db';
 
 export const MEMBER_PERMISSIONS: MemberPermissions = {
   [MemberPermission.ChatUpdate]: true,
@@ -34,21 +34,29 @@ const service = {
     return member;
   },
 
+  async addMemberToChat(userId: number, chatId: number, permissions: MemberPermissions) {
+    return db.withTransaction(async () => service.ensureMember(userId, chatId, permissions));
+  },
+
   async removeMember(memberId: number) {
-    const existing = await memberQueries.getById(memberId);
-    if (!existing) {
-      throwServerError({ code: ServerErrorCode.NOT_FOUND, message: 'Member not found', status: 404 });
-    }
-    return memberCommands.update(memberId, { banned: true });
+    return db.withTransaction(async () => {
+      const existing = await memberQueries.getById(memberId);
+      if (!existing) {
+        throwServerError({ code: ServerErrorCode.NOT_FOUND, message: 'Member not found', status: 404 });
+      }
+      return memberCommands.update(memberId, { banned: true });
+    });
   },
 
   async updatePermissions(memberId: number, permissions: MemberPermissions) {
-    const existing = await memberQueries.getById(memberId);
-    if (!existing) {
-      throwServerError({ code: ServerErrorCode.NOT_FOUND, message: 'Member not found', status: 404 });
-    }
-    await memberCommands.updatePermissions(memberId, permissions);
-    return await memberQueries.getById(memberId);
+    return db.withTransaction(async () => {
+      const existing = await memberQueries.getById(memberId);
+      if (!existing) {
+        throwServerError({ code: ServerErrorCode.NOT_FOUND, message: 'Member not found', status: 404 });
+      }
+      await memberCommands.updatePermissions(memberId, permissions);
+      return memberQueries.getById(memberId);
+    });
   },
 
   async hasPermission(memberId: number, permission: MemberPermission) {

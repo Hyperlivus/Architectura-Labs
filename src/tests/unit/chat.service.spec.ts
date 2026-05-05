@@ -27,6 +27,13 @@ jest.mock('../../modules/member/service', () => ({
   default: mockMemberService,
 }));
 
+jest.mock('../../providers/db', () => ({
+  __esModule: true,
+  default: {
+    withTransaction: <R>(fn: () => Promise<R>) => fn(),
+  },
+}));
+
 describe('chat service', () => {
   beforeEach(() => {
     jest.clearAllMocks();

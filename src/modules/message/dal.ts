@@ -1,9 +1,9 @@
-import db from '../../providers/db';
+import { getDb } from '../../db/context';
 import { Message, MessageCreationAttributes, MessageUpdateAttributes } from './types';
 
 export const messageCommands = {
   async create(data: MessageCreationAttributes): Promise<Message> {
-    const result = await db.query<{
+    const result = await getDb().query<{
       id: number;
       chat_id: number;
       user_id: number;
@@ -40,7 +40,7 @@ export const messageCommands = {
     fields.push('updated_at = CURRENT_TIMESTAMP');
     values.push(id);
 
-    const result = await db.query<Message>(
+    const result = await getDb().query<Message>(
       `UPDATE messages SET ${fields.join(', ')} WHERE id = $${paramIndex} RETURNING id, chat_id AS "chatId", user_id AS "userId", content, created_at AS "createdAt", updated_at AS "updatedAt"`,
       values
     );
@@ -48,21 +48,21 @@ export const messageCommands = {
   },
 
   async delete(id: number): Promise<boolean> {
-    const result = await db.query('DELETE FROM messages WHERE id = $1', [id]);
+    const result = await getDb().query('DELETE FROM messages WHERE id = $1', [id]);
     return (result.rowCount ?? 0) > 0;
   },
 };
 
 export const messageQueries = {
   async getById(id: number): Promise<Message | null> {
-    return db.maybeOne<Message>(
+    return getDb().maybeOne<Message>(
       `SELECT id, chat_id AS "chatId", user_id AS "userId", content, created_at AS "createdAt", updated_at AS "updatedAt" FROM messages WHERE id = $1`,
       [id]
     );
   },
 
   async getByChat(chatId: number, limit: number = 50, offset: number = 0): Promise<Message[]> {
-    return db.many<Message>(
+    return getDb().many<Message>(
       `SELECT id, chat_id AS "chatId", user_id AS "userId", content, created_at AS "createdAt", updated_at AS "updatedAt" FROM messages WHERE chat_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
       [chatId, limit, offset]
     );

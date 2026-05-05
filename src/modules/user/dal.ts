@@ -1,4 +1,4 @@
-import db from '../../providers/db';
+import { getDb } from '../../db/context';
 import { User } from './types';
 
 export interface UserCreationAttributes {
@@ -12,7 +12,7 @@ export type UpdatedUser = Omit<User, 'id'>;
 
 export const userCommands = {
     async create(data: UserCreationAttributes): Promise<User> {
-        const result = await db.one<User>(`
+        const result = await getDb().one<User>(`
             INSERT INTO users (nickname, email, tag, password, otp, email_verified)
             VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *
@@ -32,22 +32,29 @@ export const userCommands = {
             .join(', ');
 
         const query = `UPDATE users SET ${setClause} WHERE id = $1 RETURNING *`;
-        return db.one<User>(query, [id, ...values]);
+        return getDb().one<User>(query, [id, ...values]);
     }
 };
 
 export const userQueries = {
     async getByTag(tag: string): Promise<User | null> {
-        return db.maybeOne<User>('SELECT * FROM users WHERE tag = $1', [tag]);
+        return getDb().maybeOne<User>('SELECT * FROM users WHERE tag = $1', [tag]);
     },
     async getByEmail(email: string): Promise<User | null> {
-        return db.maybeOne<User>('SELECT * FROM users WHERE email = $1', [email]);
+        return getDb().maybeOne<User>('SELECT * FROM users WHERE email = $1', [email]);
     },
     async getById(id: number): Promise<User | null> {
-        return db.maybeOne<User>('SELECT * FROM users WHERE id = $1', [id]);
+        return getDb().maybeOne<User>('SELECT * FROM users WHERE id = $1', [id]);
     },
     async getByEmailOrTag(value: string): Promise<User | null> {
-        return db.maybeOne<User>('SELECT * FROM users WHERE email = $1 OR tag = $2', [value, value]);
+        return getDb().maybeOne<User>('SELECT * FROM users WHERE email = $1 OR tag = $2', [value, value]);
+    },
+
+    async getByTags(tags: string[]): Promise<User[]> {
+        if (tags.length === 0) {
+            return [];
+        }
+        return getDb().any<User>('SELECT * FROM users WHERE tag = ANY($1::text[])', [tags]);
     },
 };
 

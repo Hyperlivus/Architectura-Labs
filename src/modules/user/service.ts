@@ -10,6 +10,7 @@ const service = {
     getByTagOrEmail: userQueries.getByEmailOrTag,
     getByTag: userQueries.getByTag,
     getByEmail: userQueries.getByEmail,
+    getByTags: userQueries.getByTags,
     create: userCommands.create,
     update: userCommands.update,
 };

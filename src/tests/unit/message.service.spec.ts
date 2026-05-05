@@ -28,9 +28,32 @@ jest.mock('../../modules/member/service', () => ({
   default: mockMemberService,
 }));
 
+jest.mock('../../providers/db', () => ({
+  __esModule: true,
+  default: {
+    withTransaction: <R>(fn: () => Promise<R>) => fn(),
+  },
+}));
+
+jest.mock('../../side-effects/rate-limit/db-message-rate-limiter', () => ({
+  messageRateLimiter: {
+    onMessageCreated: jest.fn(async () => {}),
+  },
+}));
+
+jest.mock('../../side-effects/events/in-process-event-bus', () => ({
+  appEventBus: {
+    publish: jest.fn(async () => {}),
+  },
+}));
+
 describe('message service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  afterEach(async () => {
+    await new Promise<void>((resolve) => setImmediate(() => resolve()));
   });
 
   it('createMessage throws for non-member', async () => {

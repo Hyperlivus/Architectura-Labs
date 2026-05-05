@@ -35,7 +35,7 @@ export async function chatRoutes(app: FastifyInstance) {
     const chatId = Number((request.params as any).chatId);
     const data = addMemberSchema.parse(request.body);
     await memberService.validatePermission(request, chatId, MemberPermission.MemberAdd);
-    const member = await memberService.ensureMember(data.userId, chatId, data.permissions as MemberPermissions);
+    const member = await memberService.addMemberToChat(data.userId, chatId, data.permissions as MemberPermissions);
     reply.send({ member });
   });
 

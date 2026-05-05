@@ -7,6 +7,7 @@ import {User} from "../user/types";
 import {ServerErrorCode, throwServerError} from '../../providers/errors';
 import mailer from "../../providers/mailer";
 import {AuthenticatedUser} from "./guard";
+import db from '../../providers/db';
 
 
 const service = {
@@ -83,15 +84,14 @@ const service = {
     },
 
     async requestOtp(id: number) {
-        const user = await userService.getById(id);
-
-        if (!user) {
-            throwServerError({ code: ServerErrorCode.NOT_FOUND, message: 'User not found' });
-        }
-
         const otp = otpService.generateOtp(6);
-        await userService.update(user.id, {
-            otp
+        const user = await db.withTransaction(async () => {
+            const current = await userService.getById(id);
+            if (!current) {
+                throwServerError({ code: ServerErrorCode.NOT_FOUND, message: 'User not found' });
+            }
+            await userService.update(current.id, { otp });
+            return current;
         });
         await mailer.sendMail({
             to: user.email,
@@ -104,14 +104,16 @@ const service = {
     },
 
     async verifyOtp(id: number, otp: string) {
-        const user = await userService.getById(id);
-        if (!user || user.otp !== otp) {
-            throwServerError({ code: ServerErrorCode.BAD_REQUEST, message: 'Invalid OTP code' });
-        }
+        return db.withTransaction(async () => {
+            const user = await userService.getById(id);
+            if (!user || user.otp !== otp) {
+                throwServerError({ code: ServerErrorCode.BAD_REQUEST, message: 'Invalid OTP code' });
+            }
 
-        return userService.update(user.id, {
-            otp: null,
-            email_verified: true,
+            return userService.update(user.id, {
+                otp: null,
+                email_verified: true,
+            });
         });
     }
 }

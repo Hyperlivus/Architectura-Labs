@@ -53,6 +53,13 @@ jest.mock('bcrypt', () => ({
   ...mockBcrypt,
 }));
 
+jest.mock('../../providers/db', () => ({
+  __esModule: true,
+  default: {
+    withTransaction: <R>(fn: () => Promise<R>) => fn(),
+  },
+}));
+
 describe('auth service', () => {
   beforeEach(() => {
     jest.clearAllMocks();

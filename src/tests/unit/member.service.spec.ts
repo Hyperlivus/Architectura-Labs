@@ -29,6 +29,13 @@ jest.mock('../../modules/auth/guard', () => ({
   authGuard: mockAuthGuard,
 }));
 
+jest.mock('../../providers/db', () => ({
+  __esModule: true,
+  default: {
+    withTransaction: <R>(fn: () => Promise<R>) => fn(),
+  },
+}));
+
 describe('member service', () => {
   beforeEach(() => {
     jest.clearAllMocks();

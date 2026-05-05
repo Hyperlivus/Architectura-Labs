@@ -1,22 +1,25 @@
 import { chatCommands, chatQueries } from './dal';
-import memberService, { MEMBER_PERMISSIONS } from '../member/service';
+import memberService from '../member/service';
 import { MemberPermissions, MemberPermission } from '../member/permissions';
 import { ChatCreationAttributes, ChatUpdateAttributes } from './types';
 import { throwServerError, ServerErrorCode } from '../../providers/errors';
+import db from '../../providers/db';
 
 const service = {
   queries: chatQueries,
   commands: chatCommands,
 
   async createChat(data: ChatCreationAttributes, ownerId: number) {
-    const chat = await chatCommands.create(data);
-    await memberService.ensureMember(ownerId, chat.id, {
-      [MemberPermission.ChatUpdate]: true,
-      [MemberPermission.MemberAdd]: true,
-      [MemberPermission.MemberRemove]: true,
-      [MemberPermission.MemberPermissions]: true,
+    return db.withTransaction(async () => {
+      const chat = await chatCommands.create(data);
+      await memberService.ensureMember(ownerId, chat.id, {
+        [MemberPermission.ChatUpdate]: true,
+        [MemberPermission.MemberAdd]: true,
+        [MemberPermission.MemberRemove]: true,
+        [MemberPermission.MemberPermissions]: true,
+      });
+      return chat;
     });
-    return chat;
   },
 
   async updateChat(chatId: number, data: ChatUpdateAttributes) {
@@ -24,12 +27,14 @@ const service = {
       throwServerError({ code: ServerErrorCode.BAD_REQUEST, message: 'No chat fields to update', status: 400 });
     }
 
-    const existing = await chatQueries.getById(chatId);
-    if (!existing) {
-      throwServerError({ code: ServerErrorCode.NOT_FOUND, message: 'Chat not found', status: 404 });
-    }
+    return db.withTransaction(async () => {
+      const existing = await chatQueries.getById(chatId);
+      if (!existing) {
+        throwServerError({ code: ServerErrorCode.NOT_FOUND, message: 'Chat not found', status: 404 });
+      }
 
-    return chatCommands.update(chatId, data);
+      return chatCommands.update(chatId, data);
+    });
   },
 
   getById: chatQueries.getById,
